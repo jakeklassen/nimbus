@@ -18,8 +18,9 @@ compiles GPUI and takes a couple of minutes; after that `cargo run` is quick.
 
 | Command | What it does |
 |---|---|
-| `cargo run` | Start the app. GPUI and the text stack are optimized even in debug builds |
-| `cargo build --release` | Build `target/release/nimbus.exe`, with its icon and no console window |
+| `mise run build` | Debug build into `target/debug/nimbus.exe`, with a console for logs |
+| `mise run release` | Release build into `target/release/nimbus.exe`, with its icon and no console window |
+| `cargo run` | Build and start the app. GPUI and the text stack are optimized even in debug builds |
 | `cargo test` | Unit tests, then drive the real view in a headless window |
 | `cargo clippy --all-targets` | Lint |
 
