@@ -24,6 +24,7 @@ use crate::{
         search::{PlaceSearch, PlaceSearchEvent},
         skeleton::ForecastSkeleton,
     },
+    update::Updater,
     weather::{Forecast, Place, WeatherSource, notable_precipitation},
 };
 
@@ -73,7 +74,8 @@ enum LoadError {
     Forecast(Place),
 }
 
-/// The whole screen: a title bar with the place and refresh, then either the
+/// The whole screen: a title bar with the place, refresh and any waiting
+/// update, then either the
 /// forecast, its skeleton, an error, or the city search.
 pub struct WeatherView {
     source: Arc<dyn WeatherSource>,
@@ -86,12 +88,14 @@ pub struct WeatherView {
     requested: Option<Place>,
     hourly: Entity<Hourly>,
     search: Option<Entity<PlaceSearch>>,
+    updater: Entity<Updater>,
     // Replacing a task drops the one before it, so a stale load can never land.
     _load: Task<()>,
     _remember: Task<()>,
     _refresh_timer: Task<()>,
     _search_events: Option<Subscription>,
     _appearance: Subscription,
+    _updates: Subscription,
 }
 
 impl WeatherView {
@@ -99,11 +103,13 @@ impl WeatherView {
         source: Arc<dyn WeatherSource>,
         system: SystemSettings,
         options: Options,
+        updater: Entity<Updater>,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> Self {
         let hourly = cx.new(|_| Hourly::new(system.clock));
         let appearance = theme::follow_system(window, cx);
+        let updates = cx.observe(&updater, |_, _, cx| cx.notify());
         let mut this = Self {
             source,
             system,
@@ -114,11 +120,13 @@ impl WeatherView {
             requested: None,
             hourly,
             search: None,
+            updater,
             _load: Task::ready(()),
             _remember: Task::ready(()),
             _refresh_timer: Task::ready(()),
             _search_events: None,
             _appearance: appearance,
+            _updates: updates,
         };
         this.reload(true, cx);
         this
@@ -273,6 +281,7 @@ impl WeatherView {
                 .map_or("Choose a city".into(), |place| place.name.clone().into()),
         };
         let ready = matches!(self.load, Load::Ready { .. });
+        let update = self.updater.read(cx).ready().cloned();
 
         TitleBar::new().child(h_flex().flex_1().pr_1().justify_between().when(
             self.search.is_none(),
@@ -304,11 +313,26 @@ impl WeatherView {
                         )
                         .on_click(cx.listener(|this, _, window, cx| this.open_search(window, cx))),
                 )
-                .when(ready, |this| {
-                    this.child(
-                        h_flex()
-                            .gap_2()
-                            .when(self.refresh == Refresh::Failed, |this| {
+                .child(
+                    h_flex()
+                        .gap_2()
+                        .when_some(update, |this, version| {
+                            this.child(
+                                Button::new("update")
+                                    .occlude()
+                                    .primary()
+                                    .xsmall()
+                                    .label("Restart to update")
+                                    .tooltip(SharedString::from(format!(
+                                        "Nimbus {version} is ready"
+                                    )))
+                                    .on_click(cx.listener(|this, _, _, cx| {
+                                        this.updater.update(cx, |updater, _| updater.restart());
+                                    })),
+                            )
+                        })
+                        .when(ready, |this| {
+                            this.when(self.refresh == Refresh::Failed, |this| {
                                 this.child(
                                     div()
                                         .text_xs()
@@ -334,9 +358,9 @@ impl WeatherView {
                                     .loading(self.refresh == Refresh::Busy)
                                     .disabled(self.refresh == Refresh::Busy)
                                     .on_click(cx.listener(|this, _, _, cx| this.reload(true, cx))),
-                            ),
-                    )
-                })
+                            )
+                        }),
+                )
             },
         ))
     }

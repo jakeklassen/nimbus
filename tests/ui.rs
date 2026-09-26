@@ -23,6 +23,7 @@ use gpui_kit::{
 use nimbus::{
     system::{Clock, SystemSettings},
     ui::{Load, Options, Refresh, WeatherView},
+    update::{UpdateBackend, Updater},
     weather::{Current, Day, Forecast, Hour, Place, Units, WeatherSource},
 };
 
@@ -186,12 +187,23 @@ fn open(
     system: SystemSettings,
     options: Options,
 ) -> (AnyWindowHandle, Entity<WeatherView>) {
+    open_with_updates(cx, source, system, options, None)
+}
+
+fn open_with_updates(
+    cx: &mut TestAppContext,
+    source: &Fake,
+    system: SystemSettings,
+    options: Options,
+    updates: Option<Arc<dyn UpdateBackend>>,
+) -> (AnyWindowHandle, Entity<WeatherView>) {
     cx.update(gpui_kit::init);
     cx.update(nimbus::theme::init);
     let source: Arc<dyn WeatherSource> = Arc::new(source.clone());
+    let updater = cx.new(|cx| Updater::new(updates, cx));
     let mut view = None;
     let handle = cx.open_window(size(px(440.), px(820.)), |window, cx| {
-        let weather = cx.new(|cx| WeatherView::new(source, system, options, window, cx));
+        let weather = cx.new(|cx| WeatherView::new(source, system, options, updater, window, cx));
         view = Some(weather.clone());
         Root::new(weather, window, cx)
     });
@@ -522,4 +534,46 @@ fn day(ix: usize) -> ElementId {
 
 fn result(ix: usize) -> ElementId {
     ("result", ix).into()
+}
+
+/// An update backend with a release already waiting.
+#[derive(Default)]
+struct FakeUpdate {
+    restarts: Mutex<usize>,
+}
+
+impl UpdateBackend for FakeUpdate {
+    fn fetch(&self) -> BoxFuture<'static, anyhow::Result<Option<String>>> {
+        async { Ok(Some("0.2.0".to_string())) }.boxed()
+    }
+
+    fn restart(&self) -> anyhow::Result<()> {
+        *self.restarts.lock().unwrap() += 1;
+        Ok(())
+    }
+}
+
+#[gpui_kit::test]
+async fn offers_a_downloaded_update_and_restarts_into_it(cx: &mut TestAppContext) {
+    let source = Fake::new();
+    let updates = Arc::new(FakeUpdate::default());
+    let (handle, _) = open_with_updates(cx, &source, canada(), instant(), Some(updates.clone()));
+    wait_for_current(cx, handle, "19°, Cloudy").await;
+    cx.wait_for(handle, WAIT, |window, _| shows(window, "update"))
+        .await;
+
+    update(cx, handle, |window, cx| {
+        assert_eq!(window.find("update").label(), Some("Restart to update"));
+        window.click("update", cx);
+    });
+    assert_eq!(*updates.restarts.lock().unwrap(), 1);
+}
+
+#[gpui_kit::test]
+async fn offers_nothing_without_an_update(cx: &mut TestAppContext) {
+    let source = Fake::new();
+    let (handle, _) = open(cx, &source, canada(), instant());
+    wait_for_current(cx, handle, "19°, Cloudy").await;
+
+    update(cx, handle, |window, _| assert!(!shows(window, "update")));
 }

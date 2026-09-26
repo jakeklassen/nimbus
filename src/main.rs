@@ -11,10 +11,15 @@ use gpui_kit::{
 use nimbus::{
     system::SystemSettings,
     ui::{Options, WeatherView},
+    update::{UpdateBackend, Updater, Velopack},
     weather::OpenMeteo,
 };
 
 fn main() {
+    // First, before anything else: Velopack may run an install or update hook
+    // here and exit, or apply a downloaded update and restart.
+    velopack::VelopackApp::build().run();
+
     let system = SystemSettings::read();
 
     gpui_kit::application()
@@ -22,6 +27,9 @@ fn main() {
         .run(move |cx| {
             gpui_kit::init(cx);
             nimbus::theme::init(cx);
+            let backend =
+                Velopack::new().map(|velopack| Arc::new(velopack) as Arc<dyn UpdateBackend>);
+            let updater = cx.new(|cx| Updater::new(backend, cx));
             cx.on_window_closed(|cx, _| {
                 if cx.windows().is_empty() {
                     cx.quit();
@@ -51,6 +59,7 @@ fn main() {
                             Arc::new(OpenMeteo::new()),
                             system,
                             Options::default(),
+                            updater,
                             window,
                             cx,
                         )

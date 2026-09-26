@@ -9,4 +9,5 @@ pub mod format;
 pub mod system;
 pub mod theme;
 pub mod ui;
+pub mod update;
 pub mod weather;

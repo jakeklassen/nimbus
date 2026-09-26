@@ -63,6 +63,23 @@ Unchanged from the GPUIX version:
   skeleton for at least half a second; the timer's refresh stays silent. A
   failed refresh keeps the last forecast on screen and says so.
 
+## Updates
+
+Installed copies update themselves from this repository's GitHub Releases
+through [Velopack](https://velopack.io). Nimbus checks at launch and every four
+hours, downloads a newer release in the background (usually a small delta), and
+shows **Restart to update** in the title bar. An update that is not restarted
+into is applied the next time Nimbus starts.
+
+Only a copy installed by the Setup program updates itself. `cargo run` and a
+bare `nimbus.exe` never check. To try a release before publishing it, point an
+installed copy at a folder of packages built by `vpk pack`:
+
+```powershell
+$env:NIMBUS_UPDATE_SOURCE = "C:\path\to\Releases"
+& "$env:LOCALAPPDATA\Nimbus\Nimbus.exe"
+```
+
 ## What GPUI Kit does that GPUIX left to the app
 
 **Light and dark.** GPUI reports the window's appearance and notifies when it
