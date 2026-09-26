@@ -375,15 +375,34 @@ async fn swaps_in_the_skeleton_while_a_refresh_loads(cx: &mut TestAppContext) {
         .await;
 
     // The place stays in the title bar; the forecast itself is gone until data lands.
+    let mut placeholders = Vec::new();
     update(cx, handle, |window, _| {
         assert_eq!(label(window, "place").as_deref(), Some("Winnipeg"));
         assert!(!shows(window, "current"));
+        placeholders = vec![
+            window.find("hourly-skeleton").bounds(),
+            window.find("daily-skeleton").bounds(),
+        ];
     });
     cx.update(|cx| assert_eq!(view.read(cx).refresh(), Refresh::Busy));
 
     release.send(()).unwrap();
     wait_for_current(cx, handle, "23°, Cloudy").await;
-    update(cx, handle, |window, _| assert!(!shows(window, "skeleton")));
+    update(cx, handle, |window, _| {
+        assert!(!shows(window, "skeleton"));
+        // The skeleton is laid out like the forecast, so nothing moves when it lands.
+        let cards = [
+            window.find("hourly").bounds(),
+            window.find("daily").bounds(),
+        ];
+        for (placeholder, card) in placeholders.iter().zip(cards) {
+            assert!(
+                (placeholder.top() - card.top()).abs() < px(0.5)
+                    && (placeholder.size.height - card.size.height).abs() < px(0.5),
+                "skeleton card {placeholder:?} became {card:?}"
+            );
+        }
+    });
 }
 
 #[gpui_kit::test]

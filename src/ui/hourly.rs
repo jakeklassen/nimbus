@@ -247,8 +247,7 @@ impl Render for Hourly {
                                 cx.notify();
                             }
                         }))
-                        .children(columns)
-                        .horizontal_scrollbar(&self.scroll),
+                        .children(columns),
                 )
                 .when(scrollable && scrolled > px(1.), |this| {
                     this.child(fade(270.).left_0())
@@ -270,7 +269,10 @@ impl Render for Hourly {
                         .bottom_3()
                         .on_scroll_wheel(cx.listener(Self::on_wheel))
                         .test_support(),
-                ),
+                )
+                // On the wrapper, not the row: inside the row it would scroll away
+                // with the hours.
+                .horizontal_scrollbar(&self.scroll),
         )
     }
 }

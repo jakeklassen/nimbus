@@ -11,6 +11,10 @@ use crate::{
     weather::{Current, Day, Units, describe},
 };
 
+/// The big temperature's type size and line height, in rems.
+pub(crate) const TEMPERATURE_SIZE: f32 = 5.;
+pub(crate) const TEMPERATURE_LINE: f32 = 5.75;
+
 /// The big temperature, what the sky is doing, and three quick stats.
 #[derive(IntoElement)]
 pub struct CurrentConditions {
@@ -61,8 +65,8 @@ impl RenderOnce for CurrentConditions {
                             .gap_0p5()
                             .child(
                                 div()
-                                    .text_size(rems(5.))
-                                    .line_height(rems(5.75))
+                                    .text_size(rems(TEMPERATURE_SIZE))
+                                    .line_height(rems(TEMPERATURE_LINE))
                                     .font_weight(FontWeight::LIGHT)
                                     .child(temperature.clone()),
                             )

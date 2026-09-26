@@ -1,6 +1,6 @@
 use gpui_kit::{
-    AnyElement, App, ElementId, IntoElement, ParentElement, RenderOnce, SharedString,
-    StyleRefinement, Styled, Window,
+    AnyElement, App, ElementId, InteractiveElement as _, IntoElement, ParentElement, RenderOnce,
+    SharedString, StyleRefinement, Styled, TestSupportExt as _, Window,
     component::{
         ActiveTheme as _,
         group_box::{GroupBox, GroupBoxVariants as _},
@@ -64,12 +64,19 @@ impl RenderOnce for Card {
             surface.gap_2p5()
         };
 
-        GroupBox::new()
-            .fill()
+        // GroupBox is a component, not an element, so a plain block carries the
+        // id that tests and the accessibility tree see.
+        div()
+            .w_full()
+            .child(
+                GroupBox::new()
+                    .fill()
+                    .content_style(surface)
+                    .children(self.title.map(|title| card_title(title, cx)))
+                    .children(self.children),
+            )
             .id(self.id)
-            .content_style(surface)
-            .children(self.title.map(|title| card_title(title, cx)))
-            .children(self.children)
+            .test_support()
     }
 }
 

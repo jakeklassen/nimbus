@@ -116,6 +116,7 @@ impl PlaceSearch {
             .child(
                 h_flex()
                     .gap_3()
+                    .flex_1()
                     .min_w_0()
                     .child(Icon::new(icon).small().text_color(theme.muted_foreground))
                     .child(div().text_color(theme.foreground).child(title))
