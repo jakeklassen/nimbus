@@ -1,0 +1,98 @@
+{
+  "$schema": "https://github.com/longbridge/gpui-kit/raw/refs/heads/main/.theme-schema.json",
+  "name": "Nimbus",
+  "themes": [
+    {
+      "name": "Nimbus Light",
+      "mode": "light",
+      "font.size": 15,
+      "radius": 8,
+      "radius.lg": 14,
+      "shadow": false,
+      "colors": {
+        "background": "#F6F6F4",
+        "foreground": "#1F1F1F",
+        "border": "#1A1A1A12",
+        "input.border": "#1A1A1A1F",
+        "ring": "#D5663F80",
+        "caret": "#D5663F",
+        "selection.background": "#D5663F33",
+
+        "group_box.background": "#FFFFFF",
+        "group_box.foreground": "#1F1F1F",
+        "muted.background": "#1A1A1A0A",
+        "muted.foreground": "#8A8A8A",
+        "secondary.background": "#1A1A1A0A",
+        "secondary.hover.background": "#1A1A1A14",
+        "secondary.active.background": "#1A1A1A1F",
+        "secondary.foreground": "#5E5E5E",
+        "skeleton.background": "#1A1A1A14",
+        "slider.background": "#1A1A1A14",
+
+        "primary.background": "#D5663F",
+        "primary.hover.background": "#C95C36",
+        "primary.active.background": "#B8522F",
+        "primary.foreground": "#FFFFFF",
+        "info.background": "#4F83C2",
+        "info.foreground": "#FFFFFF",
+
+        "list.hover.background": "#1A1A1A0A",
+        "list.active.background": "#1A1A1A14",
+        "popover.background": "#FFFFFF",
+        "popover.foreground": "#1F1F1F",
+        "title_bar.background": "#F6F6F4",
+        "title_bar.border": "#F6F6F400",
+        "window.border": "#1A1A1A1F",
+        "scrollbar.background": "#FFFFFF00",
+        "scrollbar.thumb.background": "#BDBDBD",
+        "scrollbar.thumb.hover.background": "#8A8A8A"
+      }
+    },
+    {
+      "name": "Nimbus Dark",
+      "mode": "dark",
+      "font.size": 15,
+      "radius": 8,
+      "radius.lg": 14,
+      "shadow": false,
+      "colors": {
+        "background": "#1A1A1A",
+        "foreground": "#E2E2E2",
+        "border": "#E6EAF212",
+        "input.border": "#E6EAF21F",
+        "ring": "#E2795B80",
+        "caret": "#E2795B",
+        "selection.background": "#E2795B40",
+
+        "group_box.background": "#232323",
+        "group_box.foreground": "#E2E2E2",
+        "muted.background": "#E6EAF20D",
+        "muted.foreground": "#7D7D7D",
+        "secondary.background": "#E6EAF20D",
+        "secondary.hover.background": "#E6EAF217",
+        "secondary.active.background": "#E6EAF21F",
+        "secondary.foreground": "#A3A3A3",
+        "skeleton.background": "#E6EAF217",
+        "slider.background": "#E6EAF217",
+
+        "primary.background": "#E2795B",
+        "primary.hover.background": "#E88A6E",
+        "primary.active.background": "#D56A4C",
+        "primary.foreground": "#1A1A1A",
+        "info.background": "#7FA8D9",
+        "info.foreground": "#1A1A1A",
+
+        "list.hover.background": "#E6EAF20D",
+        "list.active.background": "#E6EAF217",
+        "popover.background": "#232323",
+        "popover.foreground": "#E2E2E2",
+        "title_bar.background": "#1A1A1A",
+        "title_bar.border": "#1A1A1A00",
+        "window.border": "#E6EAF21F",
+        "scrollbar.background": "#23232300",
+        "scrollbar.thumb.background": "#575757",
+        "scrollbar.thumb.hover.background": "#7D7D7D"
+      }
+    }
+  ]
+}
