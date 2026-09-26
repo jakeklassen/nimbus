@@ -6,5 +6,5 @@ description = "Debug build: target/debug/nimbus.exe, with a console for logs"
 run = "cargo build"
 
 [tasks.release]
-description = "Release build: target/release/nimbus.exe, optimized, no console"
+description = "Release build: target/release/nimbus.exe, ~15 MB, no console (takes ~4 min)"
 run = "cargo build --release"

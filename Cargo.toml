@@ -37,3 +37,11 @@ gpui-pre-platform = { opt-level = 3 }
 rustybuzz = { opt-level = 3 }
 taffy = { opt-level = 3 }
 ttf-parser = { opt-level = 3 }
+
+# The shipped exe: about 15 MB instead of 25, at the cost of a release build
+# that takes about 4 minutes instead of 1.5.
+[profile.release]
+lto = "fat"
+codegen-units = 1
+strip = true
+panic = "abort"
