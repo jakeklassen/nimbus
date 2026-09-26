@@ -98,6 +98,13 @@ GPUI's jump. The glide listens on a transparent layer painted over the row.
 the scrolling element itself is laid out in its content and scrolls away with
 it. Attach it to the non-scrolling parent.
 
+**Buttons in a TitleBar need `.occlude()`.** On Windows, GPUI answers the
+OS hit test with "caption" whenever the pointer is over the title bar's drag
+area, even with a button on top, so a real click drags the window instead of
+pressing the button. `.occlude()` stops the hit test at the button;
+`block_mouse_except_scroll()` does not. Headless tests and posted messages skip
+this hit test, so neither catches it.
+
 **Kit's Button centres its children.** Custom content that should start at the
 left needs `flex_1()` to fill the button.
 

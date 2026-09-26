@@ -278,7 +278,11 @@ impl WeatherView {
             self.search.is_none(),
             |this| {
                 this.child(
+                    // Title bar buttons block the drag area behind them. Otherwise
+                    // Windows hit-tests the press as a caption drag, and the button
+                    // never sees it.
                     Button::new("place")
+                        .occlude()
                         .ghost()
                         .small()
                         .tooltip("Choose a city")
@@ -318,6 +322,7 @@ impl WeatherView {
                             })
                             .child(
                                 Button::new("refresh")
+                                    .occlude()
                                     .ghost()
                                     .small()
                                     .icon(
