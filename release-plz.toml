@@ -1,0 +1,12 @@
+[workspace]
+# Nimbus is an app, not a library: versions come from git tags, and nothing
+# goes to crates.io.
+git_only = true
+publish = false
+semver_check = false
+# Release only when the Release PR is merged, not on every push to main.
+release_always = false
+# The release starts as a draft so the previous release is still "latest"
+# while the packages build, and vpk can make deltas from it. The workflow
+# attaches the installers and update feed, then publishes it.
+git_release_draft = true

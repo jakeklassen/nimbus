@@ -1,0 +1,148 @@
+# Every push to main updates a Release PR: the next version in Cargo.toml and
+# its CHANGELOG.md entry, from Conventional Commits. Merging that PR tags the
+# release, builds installers and update packages for each OS, and publishes
+# them to GitHub Releases, where installed copies of Nimbus find them.
+
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  release-pr:
+    name: Update the Release PR
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    concurrency:
+      group: release-plz-${{ github.ref }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: jdx/mise-action@v4
+      - uses: release-plz/action@v0.5
+        with:
+          command: release-pr
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  release:
+    name: Tag a draft release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: read
+    outputs:
+      tag: ${{ steps.read.outputs.tag }}
+      version: ${{ steps.read.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: jdx/mise-action@v4
+      - id: release-plz
+        uses: release-plz/action@v0.5
+        with:
+          command: release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Empty unless merging the Release PR just released a version.
+      - id: read
+        env:
+          RELEASES: ${{ steps.release-plz.outputs.releases }}
+        run: |
+          echo "tag=$(echo "${RELEASES:-[]}" | jq -r '.[0].tag // empty')" >> "$GITHUB_OUTPUT"
+          echo "version=$(echo "${RELEASES:-[]}" | jq -r '.[0].version // empty')" >> "$GITHUB_OUTPUT"
+
+  package:
+    name: Package (${{ matrix.channel }})
+    needs: release
+    if: needs.release.outputs.tag != ''
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            channel: win
+            exe: nimbus.exe
+            icon: assets/nimbus.ico
+          - os: ubuntu-22.04
+            channel: linux
+            exe: nimbus
+            icon: assets/nimbus.png
+          - os: macos-latest
+            channel: osx
+            exe: nimbus
+            icon: assets/nimbus.icns
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
+    steps:
+      # The commit release-plz released, which is the one that was pushed.
+      - uses: actions/checkout@v7
+
+      - name: Install Linux build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libfontconfig-dev libfreetype-dev libwayland-dev \
+            libx11-xcb-dev libxkbcommon-dev libxkbcommon-x11-dev libvulkan1
+
+      - uses: jdx/mise-action@v4
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build
+        run: cargo build --release --locked
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 8.0.x
+
+      # vpk must match the velopack crate the app was built with.
+      - name: Install vpk
+        shell: bash
+        run: |
+          version=$(awk '/^name = "velopack"$/ { getline; gsub(/"/, "", $3); print $3 }' Cargo.lock)
+          dotnet tool install -g vpk --version "$version"
+
+      - name: Package and attach to the draft release
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: https://github.com/${{ github.repository }}
+          TAG: ${{ needs.release.outputs.tag }}
+          VERSION: ${{ needs.release.outputs.version }}
+        run: |
+          mkdir publish
+          cp "target/release/${{ matrix.exe }}" publish/
+          # The previous release, so vpk can build a small delta from it. The
+          # first release has none.
+          vpk download github --repoUrl "$REPO" --token "$GITHUB_TOKEN" \
+            --channel ${{ matrix.channel }} --outputDir Releases || true
+          vpk pack --packId Nimbus --packVersion "$VERSION" --packTitle Nimbus \
+            --packDir publish --mainExe "${{ matrix.exe }}" --icon "${{ matrix.icon }}" \
+            --channel ${{ matrix.channel }} --outputDir Releases
+          # Uploads this build's packages and a feed of them into the draft
+          # release-plz created. The channels' files have distinct names, so
+          # the three jobs don't collide.
+          vpk upload github --repoUrl "$REPO" --token "$GITHUB_TOKEN" \
+            --channel ${{ matrix.channel }} --outputDir Releases --tag "$TAG" --merge
+
+  publish:
+    name: Publish the release
+    needs: [release, package]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Publish the draft
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.release.outputs.tag }}
+        run: gh release edit "$TAG" --repo "${{ github.repository }}" --draft=false --latest
