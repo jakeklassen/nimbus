@@ -577,3 +577,17 @@ async fn offers_nothing_without_an_update(cx: &mut TestAppContext) {
 
     update(cx, handle, |window, _| assert!(!shows(window, "update")));
 }
+
+#[gpui_kit::test]
+async fn shows_the_running_version(cx: &mut TestAppContext) {
+    let source = Fake::new();
+    let (handle, _) = open(cx, &source, canada(), instant());
+    wait_for_current(cx, handle, "19°, Cloudy").await;
+
+    update(cx, handle, |window, _| {
+        let expected = format!("Nimbus {}", env!("CARGO_PKG_VERSION"));
+        assert_eq!(label(window, "version").as_deref(), Some(expected.as_str()));
+        // It sits below the forecast, not over it.
+        assert!(window.find("version").bounds().top() >= window.find("daily").bounds().bottom());
+    });
+}

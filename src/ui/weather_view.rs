@@ -432,10 +432,12 @@ impl WeatherView {
 impl Render for WeatherView {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let (background, foreground) = (cx.theme().background, cx.theme().foreground);
+        let muted = cx.theme().muted_foreground;
         let body = match &self.search {
             Some(search) => search.clone().into_any_element(),
             None => self.render_body(cx),
         };
+        let version = SharedString::from(format!("Nimbus {}", env!("CARGO_PKG_VERSION")));
 
         v_flex()
             .size_full()
@@ -447,9 +449,21 @@ impl Render for WeatherView {
                     .flex_1()
                     .min_h_0()
                     .px_5()
-                    .pb_5()
+                    .pb_4()
                     .gap_3()
-                    .child(body),
+                    .child(body)
+                    // Which build is running, so an update is easy to confirm.
+                    .child(
+                        div()
+                            .mt_auto()
+                            .text_center()
+                            .text_xs()
+                            .text_color(muted)
+                            .child(version.clone())
+                            .id("version")
+                            .aria_label(version)
+                            .test_support(),
+                    ),
             )
     }
 }
