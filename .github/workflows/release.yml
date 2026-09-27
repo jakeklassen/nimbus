@@ -2,6 +2,11 @@
 # its CHANGELOG.md entry, from Conventional Commits. Merging that PR tags the
 # release, builds installers and update packages for each OS, and publishes
 # them to GitHub Releases, where installed copies of Nimbus find them.
+#
+# CI runs here on every push to main, and nothing is tagged unless it passes.
+# The Release PR itself gets no CI run: GitHub starts no workflows for pull
+# requests opened with GITHUB_TOKEN. Its only changes are the version and the
+# changelog, and the merge is tested here before it ships.
 
 name: Release
 
@@ -10,6 +15,10 @@ on:
     branches: [main]
 
 jobs:
+  test:
+    name: CI
+    uses: ./.github/workflows/ci.yml
+
   release-pr:
     name: Update the Release PR
     runs-on: ubuntu-latest
@@ -33,6 +42,7 @@ jobs:
 
   release:
     name: Tag a draft release
+    needs: test
     runs-on: ubuntu-latest
     permissions:
       contents: write

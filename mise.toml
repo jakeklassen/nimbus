@@ -1,5 +1,5 @@
 [tools]
-rust = "1.98.1"
+rust = { version = "1.98.1", components = "clippy,rustfmt" }
 
 [tasks.build]
 description = "Debug build: target/debug/nimbus.exe, with a console for logs"

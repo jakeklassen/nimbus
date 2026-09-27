@@ -10,3 +10,20 @@ release_always = false
 # while the packages build, and vpk can make deltas from it. The workflow
 # attaches the installers and update feed, then publishes it.
 git_release_draft = true
+# Propose a release only for changes that reach users. A ci: or chore:
+# commit on its own ships nothing.
+release_commits = "^(feat|fix|perf|refactor|revert)[(:!]"
+
+[changelog]
+# release-plz's Keep a Changelog groups, less the commits users never see.
+# The first matching parser wins, so the skips come before the catch-all.
+commit_parsers = [
+  { message = "^feat", group = "added" },
+  { message = "^changed", group = "changed" },
+  { message = "^deprecated", group = "deprecated" },
+  { message = "^removed", group = "removed" },
+  { message = "^fix", group = "fixed" },
+  { message = "^security", group = "security" },
+  { message = "^(ci|chore)[(:!]", skip = true },
+  { message = ".*", group = "other" },
+]
